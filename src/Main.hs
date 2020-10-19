@@ -25,11 +25,31 @@ emptyRow = Row E E E
 initGameState :: GameState
 initGameState = GameState emptyBoard X ONGOING
 
+pointFromIntegers :: Integer -> Integer -> Maybe Point
+pointFromIntegers r c = Nothing
+
 boardIndexFromInteger :: Integer -> Maybe BoardIndex
 boardIndexFromInteger 0 = Just (BoardIndex 0)
 boardIndexFromInteger 1 = Just (BoardIndex 1)
 boardIndexFromInteger 2 = Just (BoardIndex 2)
 boardIndexFromInteger _ = Nothing
+
+hasPlayerWon :: Player -> Board -> Bool
+hasPlayerWon player (Board (Row r1 r2 r3) (Row r4 r5 r6) (Row r7 r8 r9)) =
+  listEqualToPlayer player [r1, r2, r3]
+    || listEqualToPlayer player [r4, r5, r6]
+    || listEqualToPlayer player [r7, r8, r9]
+    || listEqualToPlayer player [r1, r4, r7]
+    || listEqualToPlayer player [r2, r5, r8]
+    || listEqualToPlayer player [r3, r6, r9]
+    || listEqualToPlayer player [r1, r5, r9]
+    || listEqualToPlayer player [r3, r5, r7]
+
+listEqualToPlayer :: Player -> [Spot] -> Bool
+listEqualToPlayer player spots = all (spotEqualToPlayer player) spots
+
+spotEqualToPlayer :: Player -> Spot -> Bool
+spotEqualToPlayer player (Spot s) = player == s
 
 assignPointToPlayer :: Player -> Point -> Board -> Board
 assignPointToPlayer player (Point rowIndex colIndex) (Board r1 r2 r3) = case rowIndex of
@@ -61,5 +81,6 @@ availablePointsForRow index row = case row of
 
 main :: IO ()
 main = do
-   x <- getLine
-   print x
+  putStrLn "Welcome! Let's Pay "
+  x <- getLine
+  print x
