@@ -1,5 +1,8 @@
 module Main where
 
+import Data.List (intercalate)
+import Text.Read (readMaybe)
+
 data Player = X | O deriving (Show, Eq)
 
 data Spot = Spot Player | E deriving (Show, Eq)
@@ -12,7 +15,7 @@ newtype BoardIndex = BoardIndex Integer
 
 data Point = Point BoardIndex BoardIndex
 
-data GameStatus = WIN | LOSS | ONGOING
+data GameStatus = WIN | LOSS | TIE | ONGOING
 
 data GameState = GameState Board Player GameStatus
 
@@ -22,11 +25,49 @@ emptyBoard = Board emptyRow emptyRow emptyRow
 emptyRow :: Row
 emptyRow = Row E E E
 
+nextPlayer :: Player -> Player
+nextPlayer X = O
+nextPlayer O = X
+
+gameLoop :: GameState -> IO ()
+gameLoop (GameState (Board r1 r2 r3) p gameStatus) = do
+  putStrLn "Row:\n"
+  row <- getLine
+  putStrLn "Col:\n"
+  col <- getLine
+  point <- pointFromUser row col
+  validatedPoint <- validatePoint (Board r1 r2 r3) p
+  newBoard <- assignPointToPlayer p (Board r1 r2 r3)
+  newGameState <- gameLoop newBoard (nextPlayer p) gameStatus
+  gameLoop newGameState
+
 initGameState :: GameState
 initGameState = GameState emptyBoard X ONGOING
 
+gameStateToString :: GameState -> String
+gameStateToString (GameState (Board r1 r2 r3) p s) =
+  intercalate ("\n") [rowToString r1, rowToString r2, rowToString r3]
+
+rowToString :: Row -> String
+rowToString (Row r1 r2 r3) =
+  intercalate (" ") [(show r1), (show r2), (show r3)]
+
+validatePoint :: Board -> Point -> Maybe Point
+validatePoint p b = do
+  points <- availablePointsForBoard b
+  if elem points p then Just p else Nothing
+
+pointFromUser :: String -> String -> Maybe Point
+pointFromUser r c = do
+  rAsInt <- (readMaybe r :: Maybe Integer)
+  cAsInt <- (readMaybe c :: Maybe Integer)
+  pointFromIntegers rAsInt cAsInt
+
 pointFromIntegers :: Integer -> Integer -> Maybe Point
-pointFromIntegers r c = Nothing
+pointFromIntegers r c = do
+  rBoardIndex <- boardIndexFromInteger r
+  cBoardIndex <- boardIndexFromInteger c
+  Just (Point rBoardIndex cBoardIndex)
 
 boardIndexFromInteger :: Integer -> Maybe BoardIndex
 boardIndexFromInteger 0 = Just (BoardIndex 0)
@@ -82,5 +123,6 @@ availablePointsForRow index row = case row of
 main :: IO ()
 main = do
   putStrLn "Welcome! Let's Pay "
+  gameState <- initGameState
   x <- getLine
   print x
