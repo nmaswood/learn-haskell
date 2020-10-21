@@ -11,9 +11,9 @@ data Row = Row Spot Spot Spot deriving (Show, Eq)
 
 data Board = Board Row Row Row deriving (Show, Eq)
 
-newtype BoardIndex = BoardIndex Integer
+newtype BoardIndex = BoardIndex Integer deriving (Show, Eq)
 
-data Point = Point BoardIndex BoardIndex
+data Point = Point BoardIndex BoardIndex deriving (Show, Eq)
 
 data GameState = GameState Board Player
 
@@ -32,9 +32,10 @@ gameLoop (GameState board p) =
   case hasPlayerWon p board of
     True -> putStrLn "The game has been won!"
     False -> do
-      putStrLn "Row:\n"
+      putStrLn (gameStateToString (GameState board p))
+      putStrLn "\n\nSelect your row:\n"
       row <- getLine
-      putStrLn "Col:\n"
+      putStrLn "\n\nSelect your column:\n"
       col <- getLine
       case validPointFromUser row col board of
         Just point -> gameLoop (GameState (assignPointToPlayer p point board) (nextPlayer p))
@@ -47,7 +48,7 @@ initGameState = GameState emptyBoard X
 
 gameStateToString :: GameState -> String
 gameStateToString (GameState (Board r1 r2 r3) p) =
-  intercalate ("\n") [rowToString r1, rowToString r2, rowToString r3]
+  "Player on deck: " ++ (show p) ++ "\n" ++ (intercalate ("\n") [rowToString r1, rowToString r2, rowToString r3])
 
 rowToString :: Row -> String
 rowToString (Row r1 r2 r3) =
@@ -60,9 +61,10 @@ validPointFromUser r c b = do
 
 validatePoint :: Board -> Point -> Maybe Point
 validatePoint b p =
-  case elem p (availablePointsForBoard b) of
-    True -> Just p
-    False -> Nothing
+  let availablePoints = (availablePointsForBoard b)
+   in case (elem p availablePoints) of
+        True -> Just p
+        False -> Nothing
 
 pointFromUser :: String -> String -> Maybe Point
 pointFromUser r c = do
@@ -84,20 +86,26 @@ boardIndexFromInteger _ = Nothing
 
 hasPlayerWon :: Player -> Board -> Bool
 hasPlayerWon player (Board (Row r1 r2 r3) (Row r4 r5 r6) (Row r7 r8 r9)) =
-  listEqualToPlayer player [r1, r2, r3]
-    || listEqualToPlayer player [r4, r5, r6]
-    || listEqualToPlayer player [r7, r8, r9]
-    || listEqualToPlayer player [r1, r4, r7]
-    || listEqualToPlayer player [r2, r5, r8]
-    || listEqualToPlayer player [r3, r6, r9]
-    || listEqualToPlayer player [r1, r5, r9]
-    || listEqualToPlayer player [r3, r5, r7]
+  any
+    (listEqualToPlayer player)
+    ( [ [r1, r2, r3],
+        [r4, r5, r6],
+        [r7, r8, r9],
+        [r1, r4, r7],
+        [r2, r5, r8],
+        [r3, r6, r9],
+        [r1, r5, r9],
+        [r3, r5, r7]
+      ]
+    )
 
 listEqualToPlayer :: Player -> [Spot] -> Bool
 listEqualToPlayer player spots = all (spotEqualToPlayer player) spots
 
 spotEqualToPlayer :: Player -> Spot -> Bool
-spotEqualToPlayer player (Spot s) = player == s
+spotEqualToPlayer player s = case s of
+  Spot p -> p == player
+  E -> False
 
 assignPointToPlayer :: Player -> Point -> Board -> Board
 assignPointToPlayer player (Point rowIndex colIndex) (Board r1 r2 r3) = case rowIndex of
@@ -129,6 +137,5 @@ availablePointsForRow index row = case row of
 
 main :: IO ()
 main = do
-  putStrLn "Welcome! Let's Pay "
-  x <- getLine
-  print x
+  putStrLn "Welcome! Let's Pay Tic-Tac-Toe\n\n"
+  gameLoop initGameState
