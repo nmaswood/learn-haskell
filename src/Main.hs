@@ -108,18 +108,22 @@ spotEqualToPlayer player s = case s of
   E -> False
 
 assignPointToPlayer :: Player -> Point -> Board -> Board
-assignPointToPlayer player (Point rowIndex colIndex) (Board r1 r2 r3) = case rowIndex of
-  BoardIndex 0 -> Board (assignPointToPlayerForRow player colIndex r1) r2 r3
-  BoardIndex 1 -> Board r1 (assignPointToPlayerForRow player colIndex r2) r3
-  BoardIndex 2 -> Board r1 r2 (assignPointToPlayerForRow player colIndex r3)
-  _ -> error "Invalid board index"
+assignPointToPlayer player (Point rowIndex colIndex) (Board r1 r2 r3) =
+  let assignPoint = assignPointToPlayerForRow player colIndex
+   in case rowIndex of
+        BoardIndex 0 -> Board (assignPoint r1) r2 r3
+        BoardIndex 1 -> Board r1 (assignPoint r2) r3
+        BoardIndex 2 -> Board r1 r2 (assignPoint r3)
+        _ -> error "Invalid board index"
 
 assignPointToPlayerForRow :: Player -> BoardIndex -> Row -> Row
-assignPointToPlayerForRow player boardIndex (Row r1 r2 r3) = case boardIndex of
-  BoardIndex 0 -> Row (Spot player) r2 r3
-  BoardIndex 1 -> Row r1 (Spot player) r3
-  BoardIndex 2 -> Row r1 r2 (Spot player)
-  _ -> error "Invalid board index"
+assignPointToPlayerForRow player boardIndex (Row r1 r2 r3) =
+  let spot = Spot player
+   in case boardIndex of
+        BoardIndex 0 -> Row spot r2 r3
+        BoardIndex 1 -> Row r1 spot r3
+        BoardIndex 2 -> Row r1 r2 spot
+        _ -> error "Invalid board index"
 
 availablePointsForBoard :: Board -> [Point]
 availablePointsForBoard (Board r1 r2 r3) = (availablePointsForRow (BoardIndex 0) r1) ++ (availablePointsForRow (BoardIndex 1) r2) ++ (availablePointsForRow (BoardIndex 2) r3)
