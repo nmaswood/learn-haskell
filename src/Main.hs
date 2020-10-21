@@ -15,9 +15,7 @@ newtype BoardIndex = BoardIndex Integer
 
 data Point = Point BoardIndex BoardIndex
 
-data GameStatus = WIN | LOSS | TIE | ONGOING
-
-data GameState = GameState Board Player GameStatus
+data GameState = GameState Board Player
 
 emptyBoard :: Board
 emptyBoard = Board emptyRow emptyRow emptyRow
@@ -30,32 +28,39 @@ nextPlayer X = O
 nextPlayer O = X
 
 gameLoop :: GameState -> IO ()
-gameLoop (GameState (Board r1 r2 r3) p gameStatus) = do
+gameLoop (GameState board p) = do
   putStrLn "Row:\n"
   row <- getLine
   putStrLn "Col:\n"
   col <- getLine
-  point <- pointFromUser row col
-  validatedPoint <- validatePoint (Board r1 r2 r3) p
-  newBoard <- assignPointToPlayer p (Board r1 r2 r3)
-  newGameState <- gameLoop newBoard (nextPlayer p) gameStatus
-  gameLoop newGameState
+  pointFromUser <- validPointFromUser row col board
+  case pointFromUser of
+    Just point -> gameLoop (assignPointToPlayer p point board) (nextPlayer p)
+    Nothing -> do
+      putStrLn "Please input a valid col / row index"
+      gameLoop (GameState b p)
 
 initGameState :: GameState
-initGameState = GameState emptyBoard X ONGOING
+initGameState = GameState emptyBoard X
 
 gameStateToString :: GameState -> String
-gameStateToString (GameState (Board r1 r2 r3) p s) =
+gameStateToString (GameState (Board r1 r2 r3) p) =
   intercalate ("\n") [rowToString r1, rowToString r2, rowToString r3]
 
 rowToString :: Row -> String
 rowToString (Row r1 r2 r3) =
   intercalate (" ") [(show r1), (show r2), (show r3)]
 
+validPointFromUser :: String -> String -> Board -> Maybe Point
+validPointFromUser r c b = do
+  inputPoint <- pointFromUser r c
+  validatePoint b inputPoint
+
 validatePoint :: Board -> Point -> Maybe Point
-validatePoint p b = do
-  points <- availablePointsForBoard b
-  if elem points p then Just p else Nothing
+validatePoint b p =
+  case elem p (availablePointsForBoard b) of
+    True -> Just p
+    False -> Nothing
 
 pointFromUser :: String -> String -> Maybe Point
 pointFromUser r c = do
@@ -123,6 +128,5 @@ availablePointsForRow index row = case row of
 main :: IO ()
 main = do
   putStrLn "Welcome! Let's Pay "
-  gameState <- initGameState
   x <- getLine
   print x
