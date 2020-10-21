@@ -28,17 +28,19 @@ nextPlayer X = O
 nextPlayer O = X
 
 gameLoop :: GameState -> IO ()
-gameLoop (GameState board p) = do
-  putStrLn "Row:\n"
-  row <- getLine
-  putStrLn "Col:\n"
-  col <- getLine
-  pointFromUser <- validPointFromUser row col board
-  case pointFromUser of
-    Just point -> gameLoop (assignPointToPlayer p point board) (nextPlayer p)
-    Nothing -> do
-      putStrLn "Please input a valid col / row index"
-      gameLoop (GameState b p)
+gameLoop (GameState board p) =
+  case hasPlayerWon p board of
+    True -> putStrLn "The game has been won!"
+    False -> do
+      putStrLn "Row:\n"
+      row <- getLine
+      putStrLn "Col:\n"
+      col <- getLine
+      case validPointFromUser row col board of
+        Just point -> gameLoop (GameState (assignPointToPlayer p point board) (nextPlayer p))
+        Nothing -> do
+          putStrLn "Please input a valid col / row index"
+          gameLoop (GameState board p)
 
 initGameState :: GameState
 initGameState = GameState emptyBoard X
